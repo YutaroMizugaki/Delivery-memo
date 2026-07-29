@@ -16,6 +16,7 @@ function createRecord(name, area, time, overrides = {}) {
     cartNo: '',
     cartYes: '',
     notes: '',
+    updatedAt: '2026-01-15T09:00:00.000Z',
     ...overrides,
   };
 }
@@ -134,6 +135,7 @@ export function seedData() {
     createRecord('マッカーサタワー', 'その他', '—', {
       procReq: 'conditional',
       notes: '手順要確認',
+      updatedAt: '2025-10-01T09:00:00.000Z',
     }),
   ];
 }

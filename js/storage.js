@@ -2,6 +2,7 @@ import { RECORD_FIELDS, SHARED_KEY, STORAGE_KEY } from './config.js';
 import { seedData } from './seed.js';
 import { setRecords, state } from './state.js';
 import { normalize } from './search.js';
+import { showToast } from './toast.js';
 import { $ } from './utils.js';
 
 let memoryStore = null;
@@ -79,6 +80,8 @@ export function sanitizeRecords(records) {
         record[key] = !!raw[key];
       } else if (key === 'procReq') {
         record[key] = ['required', 'notRequired', 'conditional'].includes(raw[key]) ? raw[key] : 'required';
+      } else if (key === 'updatedAt') {
+        record[key] = raw[key] ? String(raw[key]) : '';
       } else {
         record[key] = String(raw[key] ?? '');
       }
@@ -126,12 +129,12 @@ export async function importRecords(file, redraw) {
   try {
     data = JSON.parse(text);
   } catch {
-    alert('JSONの読み込みに失敗しました');
+    showToast('JSONの読み込みに失敗しました', { type: 'error' });
     return;
   }
 
   if (!Array.isArray(data)) {
-    alert('配列形式のJSONが必要です');
+    showToast('配列形式のJSONが必要です', { type: 'error' });
     return;
   }
 
@@ -152,7 +155,7 @@ export async function importRecords(file, redraw) {
 
   await persist(state.records);
   redraw();
-  alert(`${imported.length}件を読み込みました`);
+  showToast(`${imported.length}件を読み込みました`, { type: 'success' });
 }
 
 export function exportRecords() {
@@ -164,6 +167,7 @@ export function exportRecords() {
   anchor.download = `配達メモ_backup_${stamp}.json`;
   anchor.click();
   URL.revokeObjectURL(anchor.href);
+  showToast('バックアップを保存しました', { type: 'success' });
 }
 
 export function isSharedMode() {
