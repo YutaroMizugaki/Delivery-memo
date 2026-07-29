@@ -242,3 +242,64 @@ mark { background: var(--accent-dim); color: var(--accent); border-radius: 2px; 
   cursor: pointer; margin-top: 8px; font-family: inherit;
 }
 .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+
+.updated-at {
+  margin-top: 14px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.updated-badge {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.updated-badge--stale {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--red);
+}
+
+.toast {
+  position: fixed;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  max-width: calc(100% - 32px);
+  text-align: center;
+}
+
+.toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+.toast--success {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.toast--error {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+@media (min-width: 520px) {
+  .toast { bottom: 32px; }
+}

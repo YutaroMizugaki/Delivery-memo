@@ -1,7 +1,7 @@
 import { FILTER_AREAS, FILTER_CHIPS } from './config.js';
 import { highlight, hoursState, normalize, searchText } from './search.js';
 import { state, toggleCard } from './state.js';
-import { escapeHtml, $ } from './utils.js';
+import { escapeHtml, formatUpdatedAt, $ } from './utils.js';
 
 function getTags(record) {
   const tags = [];
@@ -47,6 +47,14 @@ function buildCardBody(record) {
   }
 
   if (record.notes) sections.push(renderSection('注意', escapeHtml(record.notes)));
+
+  const updated = formatUpdatedAt(record.updatedAt);
+  const staleBadge = updated.stale
+    ? '<span class="updated-badge updated-badge--stale">要確認</span>'
+    : '';
+  sections.push(`
+    <p class="updated-at">${staleBadge}<span>${escapeHtml(updated.label)}</span></p>
+  `);
 
   sections.push(`
     <div class="card-actions">

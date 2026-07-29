@@ -1,6 +1,6 @@
-import { SELECT_FIELDS } from './config.js';
+import { SEARCH_DEBOUNCE_MS } from './config.js';
 import { bindSelectEvents, readForm, syncChecks, updateDuplicateWarning, writeForm } from './form.js';
-import { bindFilterEvents, bindListEvents, redraw } from './render.js';
+import { bindFilterEvents, bindListEvents, redraw, renderList } from './render.js';
 import { findDuplicate } from './search.js';
 import { clearOpenCards, state } from './state.js';
 import {
@@ -8,30 +8,33 @@ import {
   importRecords,
   isSharedMode,
   loadOrSeed,
-  persist,
   refresh,
   removeRecord,
   resetToSeed,
   setSharedMode,
   upsertRecord,
 } from './storage.js';
-import { $ } from './utils.js';
+import { showToast } from './toast.js';
+import { debounce, $, nowIso } from './utils.js';
+
+function openEditById(id) {
+  closeModal(true);
+  openModal(state.records.find((item) => item.id === id));
+}
+
+function duplicateWarningHandlers() {
+  return {
+    onEditExisting: openEditById,
+    onEditSimilar: openEditById,
+  };
+}
 
 function openModal(record = null) {
   state.editingId = record?.id || null;
   state.formDirty = false;
   $('modal-title').textContent = record ? '物件を編集' : '物件を追加';
   writeForm(record || { procReq: 'required' });
-  updateDuplicateWarning({
-    onEditExisting: (id) => {
-      closeModal(true);
-      openModal(state.records.find((item) => item.id === id));
-    },
-    onEditSimilar: (id) => {
-      closeModal(true);
-      openModal(state.records.find((item) => item.id === id));
-    },
-  });
+  updateDuplicateWarning(duplicateWarningHandlers());
   $('overlay').classList.add('show');
   $('f-name').focus();
 }
@@ -47,22 +50,25 @@ function closeModal(force = false) {
 async function saveForm(event) {
   event.preventDefault();
   const record = readForm();
+  record.updatedAt = nowIso();
 
   if (!record.name) {
-    alert('物件名は必須です');
+    showToast('物件名は必須です', { type: 'error' });
     return;
   }
 
   const { exact } = findDuplicate(record.name);
   if (exact && exact.id !== record.id) {
-    alert(`「${exact.name}」と同名の物件が既にあります`);
+    showToast(`「${exact.name}」と同名の物件が既にあります`, { type: 'error' });
     return;
   }
 
+  const isNew = !state.editingId;
   await upsertRecord(record);
   state.formDirty = false;
   closeModal(true);
   redraw();
+  showToast(isNew ? '物件を追加しました' : '保存しました', { type: 'success' });
 }
 
 async function deleteRecord(id) {
@@ -71,6 +77,18 @@ async function deleteRecord(id) {
   await removeRecord(id);
   state.openCards.delete(id);
   redraw();
+  showToast('削除しました', { type: 'success' });
+}
+
+const handleSearch = debounce(renderList, SEARCH_DEBOUNCE_MS);
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    await navigator.serviceWorker.register('sw.js');
+  } catch {
+    // オフライン機能は任意
+  }
 }
 
 async function init() {
@@ -79,11 +97,12 @@ async function init() {
     setSharedMode(event.target.checked);
     await loadOrSeed();
     redraw();
+    showToast(event.target.checked ? 'チーム共有モードに切り替えました' : '個人モードに切り替えました');
   });
 
   await loadOrSeed();
 
-  $('search').addEventListener('input', redraw);
+  $('search').addEventListener('input', handleSearch);
   $('btn-add').addEventListener('click', () => openModal());
   $('modal-close').addEventListener('click', () => closeModal());
   $('overlay').addEventListener('click', (event) => {
@@ -95,16 +114,7 @@ async function init() {
   });
   $('f-name').addEventListener('input', () => {
     state.formDirty = true;
-    updateDuplicateWarning({
-      onEditExisting: (id) => {
-        closeModal(true);
-        openModal(state.records.find((item) => item.id === id));
-      },
-      onEditSimilar: (id) => {
-        closeModal(true);
-        openModal(state.records.find((item) => item.id === id));
-      },
-    });
+    updateDuplicateWarning(duplicateWarningHandlers());
   });
 
   ['permit', 'cash', 'cartDiffers', 'hoursDiffers'].forEach((field) => {
@@ -121,7 +131,10 @@ async function init() {
     if (file) await importRecords(file, redraw);
     event.target.value = '';
   });
-  $('btn-refresh').addEventListener('click', () => refresh(redraw));
+  $('btn-refresh').addEventListener('click', async () => {
+    await refresh(redraw);
+    showToast('最新のデータに更新しました');
+  });
   $('btn-reset').addEventListener('click', async () => {
     const message = $('shared').checked
       ? '共有モードです。全員のデータが初期状態に戻ります。よろしいですか？'
@@ -131,6 +144,7 @@ async function init() {
       clearOpenCards();
       redraw();
     });
+    showToast('初期データに戻しました', { type: 'success' });
   });
 
   window.addEventListener('focus', () => refresh(redraw));
@@ -143,6 +157,7 @@ async function init() {
   });
 
   redraw();
+  registerServiceWorker();
 }
 
 init();
