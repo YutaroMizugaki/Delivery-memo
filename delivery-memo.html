@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>配達メモ</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #161616;
+      --surface2: #1e1e1e;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --muted: #888;
+      --accent: #f5a623;
+      --accent-dim: rgba(245, 166, 35, 0.15);
+      --green: #34d399;
+      --red: #f87171;
+      --purple: #a78bfa;
+      --blue: #60a5fa;
+      --teal: #2dd4bf;
+      --radius: 14px;
+      --font: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100dvh;
+      padding-bottom: 100px;
+    }
+    .app { max-width: 520px; margin: 0 auto; padding: 16px 16px 0; }
+
+    /* Header */
+    .header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .logo {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, #f5a623, #e8910a);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .logo svg { width: 26px; height: 26px; fill: #1a1a1a; }
+    .header-text h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: 0.02em; }
+    .header-text p { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.08em; }
+    .header-text p span { color: var(--accent); }
+
+    /* Search */
+    .search-wrap { position: relative; margin-bottom: 12px; }
+    .search-wrap svg {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; fill: var(--muted); pointer-events: none;
+    }
+    #search {
+      width: 100%; padding: 12px 14px 12px 42px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text); font-size: 0.9rem;
+      font-family: inherit;
+    }
+    #search:focus { outline: none; border-color: var(--accent); }
+    #search::placeholder { color: #555; }
+
+    /* Filters */
+    .filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 8px; scrollbar-width: none; }
+    .filters::-webkit-scrollbar { display: none; }
+    .chip {
+      flex-shrink: 0; padding: 7px 14px; border-radius: 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--muted); font-size: 0.78rem; cursor: pointer;
+      white-space: nowrap; transition: all 0.15s; font-family: inherit;
+    }
+    .chip:hover { border-color: #444; color: var(--text); }
+    .chip.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .chip .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+
+    .count { font-size: 0.75rem; color: var(--muted); margin-bottom: 14px; }
+
+    /* Cards */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); margin-bottom: 10px; overflow: hidden;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .card:hover { border-color: #333; }
+    .card.open { border-color: #444; }
+    .card-head { display: flex; padding: 16px; gap: 12px; align-items: flex-start; }
+    .card-info { flex: 1; min-width: 0; }
+    .card-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; word-break: break-all; }
+    .card-area {
+      display: inline-block; font-size: 0.7rem; color: var(--muted);
+      background: var(--surface2); padding: 2px 8px; border-radius: 6px; margin-bottom: 8px;
+    }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-size: 0.68rem; padding: 3px 10px; border-radius: 12px;
+      background: var(--surface2); color: var(--muted); display: flex; align-items: center; gap: 4px;
+    }
+    .tag .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .tag.green .dot { background: var(--green); }
+    .tag.red .dot { background: var(--red); }
+    .tag.purple .dot { background: var(--purple); }
+    .tag.blue .dot { background: var(--blue); }
+    .tag.teal .dot { background: var(--teal); }
+    .tag.yellow .dot { background: var(--accent); }
+
+    .time-box {
+      flex-shrink: 0; text-align: center; padding: 8px 12px;
+      border: 1px solid var(--border); border-radius: 10px; min-width: 72px;
+    }
+    .time-box .label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; }
+    .time-box .value { font-size: 0.95rem; font-weight: 700; color: var(--accent); margin-top: 2px; }
+    .time-box .value.empty { color: #555; }
+
+    .card-body {
+      display: none; padding: 0 16px 16px; border-top: 1px solid var(--border);
+    }
+    .card.open .card-body { display: block; }
+    .section { margin-top: 14px; }
+    .section-title {
+      font-size: 0.7rem; color: var(--accent); font-weight: 600;
+      letter-spacing: 0.06em; margin-bottom: 6px; text-transform: uppercase;
+    }
+    .section p, .section li { font-size: 0.85rem; color: #ccc; white-space: pre-wrap; }
+    .section ul { padding-left: 18px; }
+    .hours-badge {
+      display: inline-block; font-size: 0.72rem; padding: 2px 8px;
+      border-radius: 6px; margin-left: 6px;
+    }
+    .hours-badge.in { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+    .hours-badge.out { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+    .out-box {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px; margin-top: 8px;
+      display: none;
+    }
+    .out-box.active { display: block; border-color: var(--red); }
+    .out-box .label { font-size: 0.7rem; color: var(--red); font-weight: 600; margin-bottom: 4px; }
+    .card-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .card-actions button {
+      flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text); font-size: 0.8rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .card-actions button:hover { border-color: #555; }
+    .card-actions .del { color: var(--red); }
+
+    mark { background: var(--accent-dim); color: var(--accent); border-radius: 2px; padding: 0 2px; }
+
+    /* FAB */
+    .fab {
+      position: fixed; bottom: 24px; right: 24px;
+      background: linear-gradient(135deg, #f5a623, #e8910a);
+      color: #1a1a1a; border: none; border-radius: 16px;
+      padding: 14px 22px; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; box-shadow: 0 4px 20px rgba(245, 166, 35, 0.35);
+      z-index: 50; font-family: inherit;
+    }
+    @media (min-width: 520px) {
+      .fab { right: calc(50% - 260px + 24px); }
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 32px; padding: 20px 0 40px;
+      border-top: 1px solid var(--border);
+    }
+    .share-toggle {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 0.8rem; color: var(--muted); margin-bottom: 16px; cursor: pointer;
+    }
+    .share-toggle input { margin-top: 3px; accent-color: var(--accent); }
+    .footer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .footer-btns button {
+      padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); font-size: 0.8rem;
+      cursor: pointer; font-family: inherit;
+    }
+    .footer-btns button:hover { border-color: #555; }
+    .footer-links { display: flex; gap: 16px; justify-content: center; }
+    .footer-links button {
+      background: none; border: none; color: var(--muted);
+      font-size: 0.75rem; cursor: pointer; text-decoration: underline;
+      font-family: inherit;
+    }
+
+    /* Modal */
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      z-index: 100; align-items: flex-end; justify-content: center;
+    }
+    .overlay.show { display: flex; }
+    .modal {
+      background: var(--surface); border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 520px; max-height: 92dvh; overflow-y: auto;
+      padding: 20px 16px 32px;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .modal-header h2 { font-size: 1.1rem; }
+    .modal-close {
+      background: none; border: none; color: var(--muted);
+      font-size: 1.5rem; cursor: pointer; line-height: 1;
+    }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 10px 12px; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 10px;
+      color: var(--text); font-size: 0.9rem; font-family: inherit;
+    }
+    .field textarea { min-height: 72px; resize: vertical; }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: var(--accent);
+    }
+    .checks { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .check-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.82rem; cursor: pointer; padding: 6px 12px;
+      background: var(--surface2); border-radius: 8px; border: 1px solid var(--border);
+    }
+    .check-label input { accent-color: var(--accent); }
+    .check-label.on { border-color: var(--accent); background: var(--accent-dim); }
+    .cond-field { display: none; }
+    .cond-field.show { display: block; }
+    .new-input { display: none; margin-top: 6px; }
+    .new-input.show { display: block; }
+    .dup-warn {
+      background: rgba(248, 113, 113, 0.1); border: 1px solid var(--red);
+      border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; font-size: 0.82rem;
+      display: none;
+    }
+    .dup-warn.show { display: block; }
+    .dup-warn button {
+      margin-top: 6px; padding: 4px 10px; border-radius: 6px;
+      border: 1px solid var(--red); background: transparent; color: var(--red);
+      cursor: pointer; font-size: 0.78rem; font-family: inherit;
+    }
+    .similar-list { margin-top: 6px; }
+    .similar-list button {
+      display: block; background: none; border: none; color: var(--accent);
+      cursor: pointer; font-size: 0.78rem; padding: 2px 0; font-family: inherit;
+    }
+    .modal-save {
+      width: 100%; padding: 14px; border: none; border-radius: 12px;
+      background: linear-gradient(135deg, #f5a623, #e8910a);
+      color: #1a1a1a; font-size: 1rem; font-weight: 700;
+      cursor: pointer; margin-top: 8px; font-family: inherit;
+    }
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="logo">
+        <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-5h2v5h6v-8h3L12 3z"/></svg>
+      </div>
+      <div class="header-text">
+        <h1>配達メモ</h1>
+        <p>TOWER DELIVERY OPS / <span>物件手順データベース</span></p>
+      </div>
+    </header>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C8.01 14 6 11.99 6 9.5S8.01 5 10.5 5 15 7.01 15 9.5 12.99 14 10.5 14z"/></svg>
+      <input type="search" id="search" placeholder="物件名で検索（例：勝どき、麻布…）" autocomplete="off">
+    </div>
+
+    <div class="filters" id="filters"></div>
+    <div class="count" id="count"></div>
+    <div id="list"></div>
+
+    <footer class="footer">
+      <label class="share-toggle">
+        <input type="checkbox" id="shared">
+        チームで共有（複数ユーザで同じ物件DBを編集）
+      </label>
+      <div class="footer-btns">
+        <button type="button" id="btn-export">↓ バックアップを保存</button>
+        <button type="button" id="btn-import">↑ バックアップを読込</button>
+      </div>
+      <div class="footer-links">
+        <button type="button" id="btn-refresh">最新に更新</button>
+        <button type="button" id="btn-reset">初期データに戻す</button>
+      </div>
+    </footer>
+  </div>
+
+  <button type="button" class="fab" id="btn-add">+ 物件追加</button>
+  <input type="file" id="import-file" accept=".json" hidden>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">物件を追加</h2>
+        <button type="button" class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="dup-warn" id="dup-warn">
+        <div id="dup-msg"></div>
+        <button type="button" id="dup-edit" hidden>既存を編集</button>
+        <div class="similar-list" id="similar-list"></div>
+      </div>
+      <form id="form">
+        <input type="hidden" id="f-id">
+        <div class="field">
+          <label>物件名 *</label>
+          <input type="text" id="f-name" required>
+        </div>
+        <div class="field">
+          <label>エリア</label>
+          <select id="f-area"></select>
+          <input type="text" class="new-input" id="f-area-new" placeholder="新しいエリア名">
+        </div>
+        <div class="field">
+          <label>所要時間目安</label>
+          <select id="f-time"></select>
+          <input type="text" class="new-input" id="f-time-new" placeholder="例：約15分">
+        </div>
+        <div class="checks" id="checks">
+          <label class="check-label"><input type="checkbox" id="f-permit"> 駐車許可証</label>
+          <label class="check-label"><input type="checkbox" id="f-cash"> 現金が必要</label>
+          <label class="check-label"><input type="checkbox" id="f-cartDiffers"> 台車で変わる</label>
+          <label class="check-label"><input type="checkbox" id="f-hoursDiffers"> 時間外で変わる</label>
+        </div>
+        <div class="field">
+          <label>手続き</label>
+          <select id="f-procReq">
+            <option value="required">手続き必要</option>
+            <option value="conditional">条件付き手続き</option>
+            <option value="notRequired">手続き不要</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>駐車場所・方法</label>
+          <textarea id="f-parking"></textarea>
+        </div>
+        <div class="field">
+          <label>防災センター・受付の手順</label>
+          <textarea id="f-proc"></textarea>
+        </div>
+        <div class="field">
+          <label>防災センター対応時間</label>
+          <select id="f-hours"></select>
+          <input type="text" class="new-input" id="f-hours-new" placeholder="例：9:00〜21:00">
+        </div>
+        <div class="field cond-field" id="cond-procOut">
+          <label>時間外の手順</label>
+          <textarea id="f-procOut"></textarea>
+        </div>
+        <div class="field cond-field" id="cond-cartNo">
+          <label>台車なしの場合</label>
+          <textarea id="f-cartNo"></textarea>
+        </div>
+        <div class="field cond-field" id="cond-cartYes">
+          <label>台車ありの場合</label>
+          <textarea id="f-cartYes"></textarea>
+        </div>
+        <div class="field">
+          <label>その他注意点</label>
+          <textarea id="f-notes"></textarea>
+        </div>
+        <button type="submit" class="modal-save">保存</button>
+      </form>
+    </div>
+  </div>
+
+<script>
+(() => {
+'use strict';
+
+const STORAGE_KEY = 'delivery-memo-records';
+const SHARED_KEY = 'delivery-memo-shared';
+const SIMILAR_THRESHOLD = 0.55;
+
+const AREAS = ['豊洲','晴海','勝どき','青山','麻布台','麻布','日本橋','虎ノ門','六本木','その他'];
+const TIMES = ['—','約3分','約5分','約5〜20分','約10分','約10〜15分','約10〜20分','約15分','約15〜20分','約20分','約30分'];
+const HOURS_OPTS = ['','9:00〜17:00','9:00〜18:00','9:00〜21:00','24時間','その他'];
+
+const KANJI_FOLD = [
+  [/豊州/g,'豊洲'],[/洲/g,'州'],
+  [/ヶ/g,'ケ'],[/ケ/g,'ヶ'],
+  [/ヵ/g,'カ'],[/カ/g,'ヵ'],
+  [/・/g,''],[/　/g,' '],[/ /g,''],
+];
+
+const ALIASES = {
+  branz:'ブランズ',brands:'ブランズ',tower:'タワー',towers:'タワー',
+  kachidoki:'勝どき',toyosu:'豊洲',harumi:'晴海',aoyama:'青山',
+  azabu:'麻布',roppongi:'六本木',toranomon:'虎ノ門',nihonbashi:'日本橋',
+  park:'パーク',hill:'ヒルズ',hills:'ヒルズ',residence:'レジデンス',
+  ciel:'シエル',flag:'フラッグ',grand:'グランド',mid:'ミッド',south:'サウス',
+};
+
+let records = [];
+let memoryStore = null;
+let formDirty = false;
+let editingId = null;
+let openCards = new Set();
+let activeFilters = { cart: false, proc: false, hours: false, area: null };
+
+const $ = id => document.getElementById(id);
+
+function seedData() {
+  const mk = (name, area, time, opts = {}) => ({
+    id: 'seed-' + name.replace(/\s/g,''),
+    name, area, time: time || '—',
+    permit: false, cash: false, parking: '', proc: '', procReq: 'required',
+    hours: '', hoursDiffers: false, procOut: '', cartDiffers: false,
+    cartNo: '', cartYes: '', notes: '', ...opts,
+  });
+  return [
+    mk('豊洲シエルタワー','豊洲','約10分',{permit:true,procReq:'required',parking:'地下駐車場B2（許可証必要）',proc:'1F防災センターで許可証提示→エレベーター案内',hours:'9:00〜21:00',notes:'エレベーター混雑注意'}),
+    mk('ザ・豊洲タワー','豊洲','約10〜15分',{permit:true,procReq:'required',parking:'来客用駐車場（要許可証）',proc:'管理室で手続き後、案内に従う',hours:'9:00〜18:00'}),
+    mk('晴海フラッグパークビレッジ','晴海','約5〜20分',{procReq:'conditional',cartDiffers:true,cartNo:'台車不可エリアあり。1F受付で確認',cartYes:'台車使用可ルートあり。受付で申告',hours:'9:00〜21:00',hoursDiffers:true,procOut:'時間外は宅配ボックス利用'}),
+    mk('パークタワー勝どきサウス','勝どき','約20分',{permit:true,procReq:'required',parking:'地下駐車場',proc:'防災センターで手続き',hours:'9:00〜21:00',notes:'大型荷物は事前連絡推奨'}),
+    mk('クラス青山','青山','約10〜20分',{procReq:'conditional',parking:'近隣コインパーキング',proc:'1Fコンシェルジュに声かけ',hours:'9:00〜18:00'}),
+    mk('麻布台ヒルズ アマンレジデンス','麻布台','約20分',{procReq:'required',parking:'専用駐車場なし。近隣P利用',proc:'セキュリティゲート通過→管理室',hours:'9:00〜21:00',notes:'セキュリティ厳重'}),
+    mk('ブランズタワー豊洲','豊洲','約15分',{procReq:'required',parking:'来客駐車場1台',proc:'管理室で来客登録',hours:'9:00〜18:00'}),
+    mk('ブリリアイストタワー勝どき','勝どき','約15〜20分',{procReq:'required',parking:'地下駐車場',proc:'防災センター手続き',hours:'9:00〜21:00'}),
+    mk('晴海フラッグサンビレッジT棟','晴海','約15分',{permit:true,procReq:'required',parking:'許可証駐車場',proc:'管理室で手続き',hours:'9:00〜21:00'}),
+    mk('ブランズ麻布狸穴町','麻布','約3分',{procReq:'notRequired',parking:'路上不可。近隣P',proc:'インターホンで呼び出し',hours:'24時間'}),
+    mk('パークタワー勝どきミッド','勝どき','約20分',{procReq:'required',parking:'地下駐車場',proc:'防災センター',hours:'9:00〜21:00'}),
+    mk('パークアクシスプレミア 日本橋室町','日本橋','約20分',{procReq:'required',parking:'近隣P',proc:'1F受付',hours:'9:00〜18:00'}),
+    mk('虎ノ門ヒルズ レジデンシャルタワー','虎ノ門','約20分',{procReq:'required',parking:'地下駐車場',proc:'オフィスタワー側受付経由',hours:'9:00〜21:00',notes:'ルート複雑注意'}),
+    mk('六本木ヒルズ森タワー','六本木','約15分',{cash:true,procReq:'required',parking:'森タワー地下',proc:'防災センター。現金精算あり',hours:'9:00〜21:00',notes:'現金が必要な場合あり'}),
+    mk('ミッドタワーグランド','勝どき','約15分',{procReq:'required',parking:'地下駐車場',proc:'防災センター',hours:'9:00〜21:00'}),
+    mk('アークヒルズ仙石山レジデンス','六本木','約30分',{cash:true,procReq:'required',parking:'専用駐車場',proc:'ゲート通過→管理室。現金精算あり',hours:'9:00〜18:00',notes:'所要時間長め'}),
+    mk('勝どきビュータワー','勝どき','約15分',{procReq:'required',parking:'地下駐車場',proc:'防災センター',hours:'9:00〜21:00'}),
+    mk('スカイズタワー&ガーデン','豊洲','約15分',{permit:true,procReq:'required',parking:'許可証駐車場',proc:'管理室',hours:'9:00〜21:00'}),
+    mk('マッカーサタワー','その他','—',{procReq:'conditional',notes:'手順要確認'}),
+  ];
+}
+
+// Storage layer
+const storage = {
+  async get(key) {
+    try {
+      if (window.storage) return await window.storage.get(key);
+    } catch {}
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : null;
+    } catch {}
+    return memoryStore?.[key] ?? null;
+  },
+  async set(key, val) {
+    try {
+      if (window.storage) { await window.storage.set(key, val); return true; }
+    } catch {}
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+      return true;
+    } catch {}
+    memoryStore = memoryStore || {};
+    memoryStore[key] = val;
+    return false;
+  }
+};
+
+function storageKey() {
+  return $('shared').checked ? STORAGE_KEY + '-shared' : STORAGE_KEY;
+}
+
+async function loadData() {
+  return await storage.get(storageKey());
+}
+
+async function persist(arr) {
+  await storage.set(storageKey(), arr);
+  records = arr;
+}
+
+async function upsertRecord(obj) {
+  const latest = (await loadData()) || records;
+  const idx = latest.findIndex(r => r.id === obj.id);
+  if (idx >= 0) latest[idx] = obj;
+  else latest.push(obj);
+  await persist(latest);
+}
+
+async function removeRecord(id) {
+  const latest = (await loadData()) || records;
+  await persist(latest.filter(r => r.id !== id));
+}
+
+async function loadOrSeed() {
+  const saved = await loadData();
+  if (saved && Array.isArray(saved) && saved.length) {
+    records = sanitizeRecords(saved);
+    return records;
+  }
+  records = seedData();
+  return records;
+}
+
+async function refresh() {
+  if (formDirty || document.getElementById('overlay').classList.contains('show')) return;
+  const saved = await loadData();
+  if (!saved) return;
+  const sanitized = sanitizeRecords(saved);
+  if (JSON.stringify(sanitized) === JSON.stringify(records)) return;
+  records = sanitized;
+  redraw();
+}
+
+// Normalize / Search
+function normalize(s) {
+  if (!s) return '';
+  let t = s.toLowerCase();
+  t = t.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+  t = t.replace(/[\u3041-\u3096]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
+  for (const [re, rep] of KANJI_FOLD) t = t.replace(re, rep);
+  Object.entries(ALIASES).forEach(([en, ja]) => {
+    t = t.replace(new RegExp(en, 'gi'), ja.toLowerCase());
+  });
+  return t;
+}
+
+function searchText(d) {
+  return normalize([d.name, d.area, d.parking, d.proc, d.procOut, d.cartNo, d.cartYes, d.notes].join(' '));
+}
+
+function hoursState(d) {
+  if (!d.hours || d.hours === '24時間') return { inHours: true, label: d.hours || '' };
+  const m = d.hours.match(/(\d{1,2}):(\d{2})[〜\-~](\d{1,2}):(\d{2})/);
+  if (!m) return { inHours: true, label: d.hours };
+  const now = new Date();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  let start = +m[1] * 60 + +m[2];
+  let end = +m[3] * 60 + +m[4];
+  let inHours;
+  if (end < start) inHours = cur >= start || cur <= end;
+  else inHours = cur >= start && cur <= end;
+  return { inHours, label: d.hours };
+}
+
+function highlight(text, q) {
+  if (!q || !text) return escapeHtml(text || '');
+  const norm = normalize(q);
+  const idx = normalize(text).indexOf(norm);
+  if (idx < 0) return escapeHtml(text);
+  const before = text.slice(0, idx);
+  const match = text.slice(idx, idx + q.length);
+  const after = text.slice(idx + q.length);
+  return escapeHtml(before) + '<mark>' + escapeHtml(match) + '</mark>' + escapeHtml(text.slice(idx + q.length));
+}
+
+function escapeHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Duplicate detection
+function bigrams(s) {
+  const m = new Map();
+  const n = normalize(s);
+  for (let i = 0; i < n.length - 1; i++) {
+    const bg = n.slice(i, i + 2);
+    m.set(bg, (m.get(bg) || 0) + 1);
+  }
+  return m;
+}
+
+function similarity(a, b) {
+  const ba = bigrams(a), bb = bigrams(b);
+  if (!ba.size && !bb.size) return 1;
+  let inter = 0, total = 0;
+  ba.forEach((v, k) => { inter += Math.min(v, bb.get(k) || 0); total += v; });
+  bb.forEach((v, k) => { if (!ba.has(k)) total += v; });
+  return total ? (2 * inter) / total : 0;
+}
+
+function findDuplicate(name) {
+  const norm = normalize(name);
+  if (!norm) return { exact: null, similar: [] };
+  let exact = null;
+  const similar = [];
+  records.forEach(r => {
+    if (r.id === editingId) return;
+    if (normalize(r.name) === norm) exact = r;
+    else {
+      const sim = similarity(r.name, name);
+      if (sim >= SIMILAR_THRESHOLD) similar.push({ ...r, score: sim });
+    }
+  });
+  similar.sort((a, b) => b.score - a.score);
+  return { exact, similar };
+}
+
+function checkDuplicate() {
+  const name = $('f-name').value.trim();
+  const warn = $('dup-warn');
+  const { exact, similar } = findDuplicate(name);
+  if (!name) { warn.classList.remove('show'); return; }
+  if (exact) {
+    $('dup-msg').textContent = `「${exact.name}」と同名の物件が既にあります`;
+    $('dup-edit').hidden = false;
+    $('dup-edit').onclick = () => { closeModal(true); openEdit(exact.id); };
+    $('similar-list').innerHTML = '';
+    warn.classList.add('show');
+  } else if (similar.length) {
+    $('dup-msg').textContent = '類似する物件があります：';
+    $('dup-edit').hidden = true;
+    $('similar-list').innerHTML = similar.map(s =>
+      `<button type="button" data-id="${s.id}">${escapeHtml(s.name)}（${escapeHtml(s.area)}・${Math.round(s.score*100)}%）</button>`
+    ).join('');
+    $('similar-list').querySelectorAll('button').forEach(btn => {
+      btn.onclick = () => { closeModal(true); openEdit(btn.dataset.id); };
+    });
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
+  }
+}
+
+// Backup
+function exportData() {
+  const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  const d = new Date();
+  const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  a.href = URL.createObjectURL(blob);
+  a.download = `配達メモ_backup_${ds}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function sanitizeRecords(arr) {
+  const allowed = ['id','name','area','time','permit','cash','parking','proc','procReq','hours','hoursDiffers','procOut','cartDiffers','cartNo','cartYes','notes'];
+  const seen = new Set();
+  return arr.map((raw, i) => {
+    const o = {};
+    allowed.forEach(k => {
+      if (k === 'permit' || k === 'cash' || k === 'hoursDiffers' || k === 'cartDiffers') o[k] = !!raw[k];
+      else if (k === 'procReq') o[k] = ['required','notRequired','conditional'].includes(raw[k]) ? raw[k] : 'required';
+      else o[k] = String(raw[k] ?? '');
+    });
+    if (!o.name) o.name = '名称未設定';
+    if (!o.id || seen.has(o.id)) o.id = `imp-${Date.now()}-${i}`;
+    seen.add(o.id);
+    return o;
+  });
+}
+
+async function importData(file) {
+  const text = await file.text();
+  let data;
+  try { data = JSON.parse(text); } catch { alert('JSONの読み込みに失敗しました'); return; }
+  if (!Array.isArray(data)) { alert('配列形式のJSONが必要です'); return; }
+  const imported = sanitizeRecords(data);
+  const mode = confirm('OK＝統合（同名は上書き）\nキャンセル＝全置換');
+  if (mode) {
+    const map = new Map(records.map(r => [normalize(r.name), r]));
+    imported.forEach(r => {
+      const ex = map.get(normalize(r.name));
+      if (ex) { r.id = ex.id; map.set(normalize(r.name), r); }
+      else map.set(normalize(r.name), r);
+    });
+    records = [...map.values()];
+  } else {
+    records = imported;
+  }
+  await persist(records);
+  redraw();
+  alert(`${imported.length}件を読み込みました`);
+}
+
+// Render
+function getTags(d) {
+  const tags = [];
+  if (d.permit) tags.push({ text: '駐車許可証', cls: 'green' });
+  if (d.procReq === 'required') tags.push({ text: '手続き必要', cls: 'red' });
+  else if (d.procReq === 'conditional') tags.push({ text: '条件付き手続き', cls: 'blue' });
+  else tags.push({ text: '手続き不要', cls: 'green' });
+  if (d.cartDiffers) tags.push({ text: '台車で変わる', cls: 'teal' });
+  if (d.cash) tags.push({ text: '現金', cls: 'yellow' });
+  if (d.notes) tags.push({ text: '注意あり', cls: 'purple' });
+  return tags;
+}
+
+function cardHTML(d, open) {
+  const q = $('search').value.trim();
+  const tags = getTags(d).map(t => `<span class="tag ${t.cls}"><span class="dot"></span>${t.text}</span>`).join('');
+  const hs = hoursState(d);
+  const timeCls = d.time && d.time !== '—' ? '' : 'empty';
+  const timeVal = d.time && d.time !== '—' ? escapeHtml(d.time) : '—';
+
+  let body = '';
+  if (d.parking) body += `<div class="section"><div class="section-title">駐車場所</div><p>${escapeHtml(d.parking)}</p></div>`;
+  if (d.proc) body += `<div class="section"><div class="section-title">手続き</div><p>${escapeHtml(d.proc)}</p></div>`;
+  if (d.hours) {
+    const badge = hs.inHours
+      ? `<span class="hours-badge in">時間内</span>`
+      : `<span class="hours-badge out">時間外</span>`;
+    body += `<div class="section"><div class="section-title">対応時間 ${badge}</div><p>${escapeHtml(d.hours)}</p>`;
+    if (d.hoursDiffers && d.procOut) {
+      body += `<div class="out-box ${hs.inHours ? '' : 'active'}"><div class="label">時間外の手順</div><p>${escapeHtml(d.procOut)}</p></div>`;
+    }
+    body += `</div>`;
+  }
+  if (d.cartDiffers) {
+    body += `<div class="section"><div class="section-title">台車の有無で変わる</div>`;
+    if (d.cartNo) body += `<p><strong>台車なし:</strong> ${escapeHtml(d.cartNo)}</p>`;
+    if (d.cartYes) body += `<p><strong>台車あり:</strong> ${escapeHtml(d.cartYes)}</p>`;
+    body += `</div>`;
+  }
+  if (d.notes) body += `<div class="section"><div class="section-title">注意</div><p>${escapeHtml(d.notes)}</p></div>`;
+  body += `<div class="card-actions">
+    <button type="button" onclick="event.stopPropagation();openEdit('${d.id}')">編集</button>
+    <button type="button" class="del" onclick="event.stopPropagation();delItem('${d.id}')">削除</button>
+  </div>`;
+
+  return `<div class="card ${open?'open':''}" data-id="${d.id}">
+    <div class="card-head">
+      <div class="card-info">
+        <div class="card-name">${highlight(d.name, q)}</div>
+        <span class="card-area">${escapeHtml(d.area)}</span>
+        <div class="tags">${tags}</div>
+      </div>
+      <div class="time-box">
+        <div class="label">TIME</div>
+        <div class="value ${timeCls}">${timeVal}</div>
+      </div>
+    </div>
+    <div class="card-body">${body}</div>
+  </div>`;
+}
+
+function filtered() {
+  const q = normalize($('search').value.trim());
+  return records.filter(d => {
+    if (activeFilters.cart && !d.cartDiffers) return false;
+    if (activeFilters.proc && d.procReq !== 'required') return false;
+    if (activeFilters.hours && !d.hoursDiffers) return false;
+    if (activeFilters.area && d.area !== activeFilters.area) return false;
+    if (q && !searchText(d).includes(q)) return false;
+    return true;
+  });
+}
+
+function render() {
+  const list = filtered();
+  const autoOpen = list.length === 1 ? list[0].id : null;
+  $('count').textContent = `${list.length} / ${records.length} 件`;
+  if (!list.length) {
+    $('list').innerHTML = '<div class="empty">該当する物件がありません</div>';
+    return;
+  }
+  $('list').innerHTML = list.map(d => {
+    const open = openCards.has(d.id) || d.id === autoOpen;
+    return cardHTML(d, open);
+  }).join('');
+  $('list').querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.id;
+      if (openCards.has(id)) openCards.delete(id);
+      else openCards.add(id);
+      card.classList.toggle('open');
+    });
+  });
+}
+
+function renderFilters() {
+  const chips = [
+    { key: 'cart', label: '🛒 台車で変わる' },
+    { key: 'proc', label: '⚠ 手続き必要' },
+    { key: 'hours', label: '🌙 時間外で変わる' },
+  ];
+  const areaChips = ['豊洲','晴海','勝どき','青山','麻布台'];
+  let html = chips.map(c =>
+    `<button type="button" class="chip ${activeFilters[c.key]?'active':''}" data-filter="${c.key}">${c.label}</button>`
+  ).join('');
+  html += areaChips.map(a =>
+    `<button type="button" class="chip ${activeFilters.area===a?'active':''}" data-area="${a}">${a}</button>`
+  ).join('');
+  $('filters').innerHTML = html;
+  $('filters').querySelectorAll('[data-filter]').forEach(btn => {
+    btn.onclick = () => {
+      const k = btn.dataset.filter;
+      activeFilters[k] = !activeFilters[k];
+      renderFilters(); render();
+    };
+  });
+  $('filters').querySelectorAll('[data-area]').forEach(btn => {
+    btn.onclick = () => {
+      const a = btn.dataset.area;
+      activeFilters.area = activeFilters.area === a ? null : a;
+      renderFilters(); render();
+    };
+  });
+}
+
+function redraw() { renderFilters(); render(); }
+
+// Form
+const TEXT_FIELDS = ['name','area','time','parking','proc','hours','procOut','cartNo','cartYes','notes'];
+const CHECK_FIELDS = ['permit','cash','cartDiffers','hoursDiffers'];
+
+function fillSelect(sel, opts, val, newId) {
+  sel.innerHTML = opts.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o||'（未設定）')}</option>`).join('')
+    + `<option value="__new__">＋ 新規入力</option>`;
+  if (val && opts.includes(val)) sel.value = val;
+  else if (val) { sel.value = '__new__'; $(newId).value = val; $(newId).classList.add('show'); }
+  else sel.value = opts[0] || '';
+}
+
+function populateSelects(d = {}) {
+  fillSelect($('f-area'), AREAS, d.area, 'f-area-new');
+  fillSelect($('f-time'), TIMES, d.time, 'f-time-new');
+  fillSelect($('f-hours'), HOURS_OPTS, d.hours, 'f-hours-new');
+}
+
+function toggleNew(which) {
+  const sel = $('f-' + which);
+  const inp = $('f-' + which + '-new');
+  if (sel.value === '__new__') inp.classList.add('show');
+  else inp.classList.remove('show');
+}
+
+function pickValue(which) {
+  const sel = $('f-' + which);
+  if (sel.value === '__new__') return $('f-' + which + '-new').value.trim();
+  return sel.value;
+}
+
+function syncChecks() {
+  CHECK_FIELDS.forEach(k => {
+    const el = $('f-' + k);
+    el.closest('.check-label').classList.toggle('on', el.checked);
+  });
+  $('cond-procOut').classList.toggle('show', $('f-hoursDiffers').checked);
+  $('cond-cartNo').classList.toggle('show', $('f-cartDiffers').checked);
+  $('cond-cartYes').classList.toggle('show', $('f-cartDiffers').checked);
+}
+
+function writeForm(d) {
+  $('f-id').value = d.id || '';
+  $('f-name').value = d.name || '';
+  populateSelects(d);
+  $('f-procReq').value = d.procReq || 'required';
+  TEXT_FIELDS.forEach(k => {
+    if (['name','area','time','hours'].includes(k)) return;
+    const el = $('f-' + k);
+    if (el) el.value = d[k] || '';
+  });
+  CHECK_FIELDS.forEach(k => { $('f-' + k).checked = !!d[k]; });
+  syncChecks();
+  checkDuplicate();
+}
+
+function readForm() {
+  const o = {
+    id: $('f-id').value || `u-${Date.now()}`,
+    name: $('f-name').value.trim(),
+    area: pickValue('area'),
+    time: pickValue('time'),
+    hours: pickValue('hours'),
+    procReq: $('f-procReq').value,
+  };
+  TEXT_FIELDS.forEach(k => {
+    if (['name','area','time','hours'].includes(k)) return;
+    o[k] = $('f-' + k).value.trim();
+  });
+  CHECK_FIELDS.forEach(k => { o[k] = $('f-' + k).checked; });
+  return o;
+}
+
+// Modal / CRUD
+function openModal(d = null) {
+  editingId = d?.id || null;
+  formDirty = false;
+  $('modal-title').textContent = d ? '物件を編集' : '物件を追加';
+  writeForm(d || { procReq: 'required' });
+  $('overlay').classList.add('show');
+  $('f-name').focus();
+}
+
+function closeModal(force = false) {
+  if (!force && formDirty && !confirm('未保存の変更があります。閉じますか？')) return;
+  $('overlay').classList.remove('show');
+  editingId = null;
+  formDirty = false;
+  $('dup-warn').classList.remove('show');
+}
+
+window.openEdit = id => openModal(records.find(r => r.id === id));
+
+window.delItem = async id => {
+  const r = records.find(x => x.id === id);
+  if (!confirm(`「${r?.name}」を削除しますか？`)) return;
+  await removeRecord(id);
+  openCards.delete(id);
+  redraw();
+};
+
+async function saveForm(e) {
+  e.preventDefault();
+  const obj = readForm();
+  if (!obj.name) { alert('物件名は必須です'); return; }
+  const { exact } = findDuplicate(obj.name);
+  if (exact && exact.id !== obj.id) {
+    alert(`「${exact.name}」と同名の物件が既にあります`);
+    return;
+  }
+  await upsertRecord(obj);
+  formDirty = false;
+  closeModal(true);
+  redraw();
+}
+
+// Init
+async function init() {
+  const shared = localStorage.getItem(SHARED_KEY) === 'true';
+  $('shared').checked = shared;
+  $('shared').onchange = async () => {
+    localStorage.setItem(SHARED_KEY, $('shared').checked);
+    await loadOrSeed();
+    redraw();
+  };
+  await loadOrSeed();
+
+  $('search').oninput = () => render();
+  $('btn-add').onclick = () => openModal();
+  $('modal-close').onclick = () => closeModal();
+  $('overlay').onclick = e => { if (e.target === $('overlay')) closeModal(); };
+  $('form').onsubmit = saveForm;
+  $('form').oninput = () => { formDirty = true; };
+  $('f-name').oninput = () => { formDirty = true; checkDuplicate(); };
+  CHECK_FIELDS.forEach(k => {
+    $('f-' + k).onchange = () => { formDirty = true; syncChecks(); };
+  });
+
+  $('btn-export').onclick = exportData;
+  $('btn-import').onclick = () => $('import-file').click();
+  $('import-file').onchange = e => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; };
+  $('btn-refresh').onclick = refresh;
+  $('btn-reset').onclick = async () => {
+    const msg = $('shared').checked
+      ? '共有モードです。全員のデータが初期状態に戻ります。よろしいですか？'
+      : '初期データに戻しますか？';
+    if (!confirm(msg)) return;
+    records = seedData();
+    await persist(records);
+    openCards.clear();
+    redraw();
+  };
+
+  window.addEventListener('focus', refresh);
+  ['area','time','hours'].forEach(which => {
+    $('f-' + which).onchange = () => toggleNew(which);
+  });
+  populateSelects();
+  redraw();
+}
+
+init();
+window.openEdit = window.openEdit;
+window.delItem = window.delItem;
+})();
+</script>
+</body>
+</html>
