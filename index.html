@@ -2,10 +2,126 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=delivery-memo.html">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0a">
   <title>配達メモ</title>
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <p><a href="delivery-memo.html">配達メモを開く</a></p>
+  <div class="app">
+    <header class="header">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-5h2v5h6v-8h3L12 3z"/></svg>
+      </div>
+      <div class="header-text">
+        <h1>配達メモ</h1>
+        <p>TOWER DELIVERY OPS / <span>物件手順データベース</span></p>
+      </div>
+    </header>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C8.01 14 6 11.99 6 9.5S8.01 5 10.5 5 15 7.01 15 9.5 12.99 14 10.5 14z"/></svg>
+      <input type="search" id="search" placeholder="物件名で検索（例：勝どき、麻布…）" autocomplete="off">
+    </div>
+
+    <div class="filters" id="filters"></div>
+    <p class="count" id="count"></p>
+    <div id="list"></div>
+
+    <footer class="footer">
+      <label class="share-toggle">
+        <input type="checkbox" id="shared">
+        チームで共有（複数ユーザで同じ物件DBを編集）
+      </label>
+      <div class="footer-btns">
+        <button type="button" id="btn-export">↓ バックアップを保存</button>
+        <button type="button" id="btn-import">↑ バックアップを読込</button>
+      </div>
+      <div class="footer-links">
+        <button type="button" id="btn-refresh">最新に更新</button>
+        <button type="button" id="btn-reset">初期データに戻す</button>
+      </div>
+    </footer>
+  </div>
+
+  <button type="button" class="fab" id="btn-add">+ 物件追加</button>
+  <input type="file" id="import-file" accept=".json" hidden>
+
+  <div class="overlay" id="overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 id="modal-title">物件を追加</h2>
+        <button type="button" class="modal-close" id="modal-close" aria-label="閉じる">&times;</button>
+      </div>
+      <div class="dup-warn" id="dup-warn">
+        <p id="dup-msg"></p>
+        <button type="button" id="dup-edit" hidden>既存を編集</button>
+        <div class="similar-list" id="similar-list"></div>
+      </div>
+      <form id="form">
+        <input type="hidden" id="f-id">
+        <div class="field">
+          <label for="f-name">物件名 *</label>
+          <input type="text" id="f-name" required>
+        </div>
+        <div class="field">
+          <label for="f-area">エリア</label>
+          <select id="f-area"></select>
+          <input type="text" class="new-input" id="f-area-new" placeholder="新しいエリア名">
+        </div>
+        <div class="field">
+          <label for="f-time">所要時間目安</label>
+          <select id="f-time"></select>
+          <input type="text" class="new-input" id="f-time-new" placeholder="例：約15分">
+        </div>
+        <div class="checks" id="checks">
+          <label class="check-label"><input type="checkbox" id="f-permit"> 駐車許可証</label>
+          <label class="check-label"><input type="checkbox" id="f-cash"> 現金が必要</label>
+          <label class="check-label"><input type="checkbox" id="f-cartDiffers"> 台車で変わる</label>
+          <label class="check-label"><input type="checkbox" id="f-hoursDiffers"> 時間外で変わる</label>
+        </div>
+        <div class="field">
+          <label for="f-procReq">手続き</label>
+          <select id="f-procReq">
+            <option value="required">手続き必要</option>
+            <option value="conditional">条件付き手続き</option>
+            <option value="notRequired">手続き不要</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-parking">駐車場所・方法</label>
+          <textarea id="f-parking"></textarea>
+        </div>
+        <div class="field">
+          <label for="f-proc">防災センター・受付の手順</label>
+          <textarea id="f-proc"></textarea>
+        </div>
+        <div class="field">
+          <label for="f-hours">防災センター対応時間</label>
+          <select id="f-hours"></select>
+          <input type="text" class="new-input" id="f-hours-new" placeholder="例：9:00〜21:00">
+        </div>
+        <div class="field cond-field" id="cond-procOut">
+          <label for="f-procOut">時間外の手順</label>
+          <textarea id="f-procOut"></textarea>
+        </div>
+        <div class="field cond-field" id="cond-cartNo">
+          <label for="f-cartNo">台車なしの場合</label>
+          <textarea id="f-cartNo"></textarea>
+        </div>
+        <div class="field cond-field" id="cond-cartYes">
+          <label for="f-cartYes">台車ありの場合</label>
+          <textarea id="f-cartYes"></textarea>
+        </div>
+        <div class="field">
+          <label for="f-notes">その他注意点</label>
+          <textarea id="f-notes"></textarea>
+        </div>
+        <button type="submit" class="modal-save">保存</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
