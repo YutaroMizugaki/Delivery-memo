@@ -1,5 +1,5 @@
 // APP_VERSION (config.js) と同期: 更新時は両方を上げる
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 const CACHE_NAME = `delivery-memo-v${CACHE_VERSION}`;
 const BASE = new URL('.', self.location.href);
 

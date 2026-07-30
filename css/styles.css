@@ -137,19 +137,6 @@ body {
 }
 .section p, .section li { font-size: 0.85rem; color: #ccc; white-space: pre-wrap; }
 .section ul { padding-left: 18px; }
-.hours-badge {
-  display: inline-block; font-size: 0.72rem; padding: 2px 8px;
-  border-radius: 6px; margin-left: 6px;
-}
-.hours-badge.in { background: rgba(52, 211, 153, 0.15); color: var(--green); }
-.hours-badge.out { background: rgba(248, 113, 113, 0.15); color: var(--red); }
-.out-box {
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 10px; padding: 10px 12px; margin-top: 8px;
-  display: none;
-}
-.out-box.active { display: block; border-color: var(--red); }
-.out-box .label { font-size: 0.7rem; color: var(--red); font-weight: 600; margin-bottom: 4px; }
 .card-actions { display: flex; gap: 8px; margin-top: 14px; }
 .card-actions button {
   flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border);

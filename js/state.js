@@ -4,7 +4,7 @@ export const state = {
   editingId: null,
   openCards: new Set(),
   dismissedAutoOpen: new Set(),
-  activeFilters: { cart: false, proc: false, hours: false, area: null },
+  activeFilters: { cart: false, proc: false, area: null },
 };
 
 export function setRecords(records) {
