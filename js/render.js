@@ -54,11 +54,7 @@ function buildCardBody(record) {
 
   if (record.notes) sections.push(renderSection('注意', escapeHtml(record.notes)));
 
-  const updated = formatUpdatedAt(record.updatedAt);
-  const staleBadge = updated.stale
-    ? '<span class="updated-badge updated-badge--stale">要確認</span>'
-    : '';
-  sections.push(`<p class="updated-at">${staleBadge}<span>${escapeHtml(updated.label)}</span></p>`);
+  sections.push(`<p class="updated-at">${escapeHtml(formatUpdatedAt(record.updatedAt))}</p>`);
 
   sections.push(`
     <div class="card-actions">

@@ -16,25 +16,19 @@ export function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 
-const STALE_MS = 90 * 24 * 60 * 60 * 1000;
-
 export function formatUpdatedAt(iso) {
-  if (!iso) return { label: '未記録', stale: true };
+  if (!iso) return '未記録';
 
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return { label: '未記録', stale: true };
+  if (Number.isNaN(date.getTime())) return '未記録';
 
-  const diffMs = Date.now() - date.getTime();
-  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+  const diffDays = Math.floor((Date.now() - date.getTime()) / (24 * 60 * 60 * 1000));
 
-  let label;
-  if (diffDays <= 0) label = '今日更新';
-  else if (diffDays === 1) label = '昨日更新';
-  else if (diffDays < 30) label = `${diffDays}日前更新`;
-  else if (diffDays < 365) label = `${Math.floor(diffDays / 30)}ヶ月前更新`;
-  else label = `${Math.floor(diffDays / 365)}年前更新`;
-
-  return { label, stale: diffMs > STALE_MS };
+  if (diffDays <= 0) return '今日更新';
+  if (diffDays === 1) return '昨日更新';
+  if (diffDays < 30) return `${diffDays}日前更新`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}ヶ月前更新`;
+  return `${Math.floor(diffDays / 365)}年前更新`;
 }
 
 export function nowIso() {
