@@ -5,6 +5,7 @@ import { escapeHtml, formatUpdatedAt, $ } from './utils.js';
 
 const PROC_SECTION_TITLE = '防災センター・受付の手順';
 const NOTES_SECTION_TITLE = 'その他注意点';
+const HOURS_SECTION_TITLE = '防災センター対応時間';
 
 function getTags(record) {
   const tags = [];
@@ -43,7 +44,7 @@ function buildCardBody(record) {
 
   if (record.hours) {
     const badge = hoursBadgeHtml(hours);
-    let hoursHtml = `<section class="section"><h3 class="section-title">対応時間${badge ? ` ${badge}` : ''}</h3><p>${escapeHtml(record.hours)}</p>`;
+    let hoursHtml = `<section class="section"><h3 class="section-title">${HOURS_SECTION_TITLE}${badge ? ` ${badge}` : ''}</h3><p>${escapeHtml(record.hours)}</p>`;
     if (record.hoursDiffers && record.procOut) {
       hoursHtml += `<div class="out-box ${hours.inHours ? '' : 'active'}"><div class="label">時間外の手順</div><p>${escapeHtml(record.procOut)}</p></div>`;
     }
