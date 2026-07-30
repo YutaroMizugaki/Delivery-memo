@@ -1,17 +1,20 @@
-import { FILTER_AREAS, FILTER_CHIPS } from './config.js';
+import { AREAS, FILTER_CHIPS } from './config.js';
 import { highlight, hoursState, normalize, searchText } from './search.js';
-import { state, toggleCard } from './state.js';
+import { isCardOpen, state, toggleCardOpen } from './state.js';
 import { escapeHtml, formatUpdatedAt, $ } from './utils.js';
+
+const PROC_SECTION_TITLE = '防災センター・受付の手順';
+const NOTES_SECTION_TITLE = 'その他注意点';
 
 function getTags(record) {
   const tags = [];
   if (record.permit) tags.push({ text: '駐車許可証', cls: 'green' });
   if (record.procReq === 'required') tags.push({ text: '手続き必要', cls: 'red' });
   else if (record.procReq === 'conditional') tags.push({ text: '条件付き手続き', cls: 'blue' });
-  else tags.push({ text: '手続き不要', cls: 'green' });
+  else tags.push({ text: '手続き不要', cls: 'muted' });
   if (record.cartDiffers) tags.push({ text: '台車で変わる', cls: 'teal' });
   if (record.cash) tags.push({ text: '現金', cls: 'yellow' });
-  if (record.notes) tags.push({ text: '注意あり', cls: 'purple' });
+  if (record.notes) tags.push({ text: '注意', cls: 'purple' });
   return tags;
 }
 
@@ -25,18 +28,22 @@ function renderSection(title, content) {
   return `<section class="section"><h3 class="section-title">${title}</h3><p>${content}</p></section>`;
 }
 
+function hoursBadgeHtml(hours) {
+  if (hours.alwaysOpen) return '';
+  if (hours.inHours) return '<span class="hours-badge in">時間内</span>';
+  return '<span class="hours-badge out">時間外</span>';
+}
+
 function buildCardBody(record) {
   const sections = [];
   const hours = hoursState(record);
 
   if (record.parking) sections.push(renderSection('駐車場所', escapeHtml(record.parking)));
-  if (record.proc) sections.push(renderSection('手続き', escapeHtml(record.proc)));
+  if (record.proc) sections.push(renderSection(PROC_SECTION_TITLE, escapeHtml(record.proc)));
 
   if (record.hours) {
-    const badge = hours.inHours
-      ? '<span class="hours-badge in">時間内</span>'
-      : '<span class="hours-badge out">時間外</span>';
-    let hoursHtml = `<section class="section"><h3 class="section-title">対応時間 ${badge}</h3><p>${escapeHtml(record.hours)}</p>`;
+    const badge = hoursBadgeHtml(hours);
+    let hoursHtml = `<section class="section"><h3 class="section-title">対応時間${badge ? ` ${badge}` : ''}</h3><p>${escapeHtml(record.hours)}</p>`;
     if (record.hoursDiffers && record.procOut) {
       hoursHtml += `<div class="out-box ${hours.inHours ? '' : 'active'}"><div class="label">時間外の手順</div><p>${escapeHtml(record.procOut)}</p></div>`;
     }
@@ -52,7 +59,7 @@ function buildCardBody(record) {
     sections.push(cartHtml);
   }
 
-  if (record.notes) sections.push(renderSection('注意', escapeHtml(record.notes)));
+  if (record.notes) sections.push(renderSection(NOTES_SECTION_TITLE, escapeHtml(record.notes)));
 
   sections.push(`<p class="updated-at">${escapeHtml(formatUpdatedAt(record.updatedAt))}</p>`);
 
@@ -74,13 +81,14 @@ function buildCardShell(record, open, query) {
   const hasTime = record.time && record.time !== '—';
   return `
     <div class="card-head">
+      <span class="card-chevron" aria-hidden="true"></span>
       <div class="card-info">
         <h2 class="card-name">${highlight(record.name, query)}</h2>
         <span class="card-area">${escapeHtml(record.area)}</span>
         <div class="tags">${tagsHtml(record)}</div>
       </div>
       <div class="time-box">
-        <div class="label">TIME</div>
+        <div class="label">所要</div>
         <div class="value ${hasTime ? '' : 'empty'}">${hasTime ? escapeHtml(record.time) : '—'}</div>
       </div>
     </div>
@@ -140,12 +148,18 @@ function filteredRecords() {
   });
 }
 
+function getAutoOpenId(records) {
+  return records.length === 1 ? records[0].id : null;
+}
+
 export function renderList() {
   const listEl = $('list');
   const scrollY = window.scrollY;
   const records = filteredRecords();
-  const autoOpenId = records.length === 1 ? records[0].id : null;
+  const autoOpenId = getAutoOpenId(records);
   const query = $('search').value.trim();
+
+  if (records.length !== 1) state.dismissedAutoOpen.clear();
 
   $('count').textContent = `${records.length} / ${state.records.length} 件`;
 
@@ -172,7 +186,7 @@ export function renderList() {
   });
 
   records.forEach((record) => {
-    const open = state.openCards.has(record.id) || record.id === autoOpenId;
+    const open = isCardOpen(record.id, autoOpenId);
     const card = existing.get(record.id);
     if (card) syncCard(card, record, open, query);
     else listEl.appendChild(createCard(record, open, query));
@@ -193,7 +207,7 @@ export function renderFilters() {
     </button>
   `).join('');
 
-  const areaButtons = FILTER_AREAS.map((area) => `
+  const areaButtons = AREAS.map((area) => `
     <button type="button" class="chip ${state.activeFilters.area === area ? 'active' : ''}" data-area="${area}">
       ${area}
     </button>
@@ -220,8 +234,9 @@ export function bindListEvents({ onEdit, onDelete }) {
 
     const card = event.target.closest('.card');
     if (!card) return;
-    toggleCard(card.dataset.id);
-    card.classList.toggle('open');
+    const records = filteredRecords();
+    toggleCardOpen(card.dataset.id, getAutoOpenId(records));
+    renderList();
   });
 }
 

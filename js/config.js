@@ -7,12 +7,10 @@ export const APP_VERSION = 2;
 export const AREAS = ['豊洲', '晴海', '勝どき', '青山', '麻布台', '麻布', '日本橋', '虎ノ門', '六本木', 'その他'];
 export const TIMES = ['—', '約3分', '約5分', '約5〜20分', '約10分', '約10〜15分', '約10〜20分', '約15分', '約15〜20分', '約20分', '約30分'];
 export const HOURS_OPTS = ['', '9:00〜17:00', '9:00〜18:00', '9:00〜21:00', '24時間', 'その他'];
-export const FILTER_AREAS = ['豊洲', '晴海', '勝どき', '青山', '麻布台'];
-
 export const FILTER_CHIPS = [
-  { key: 'cart', label: '🛒 台車で変わる' },
-  { key: 'proc', label: '⚠ 手続き必要' },
-  { key: 'hours', label: '🌙 時間外で変わる' },
+  { key: 'cart', label: '台車で変わる' },
+  { key: 'proc', label: '手続き必要' },
+  { key: 'hours', label: '時間外で変わる' },
 ];
 
 // 検索用に各バリエーションを正規形へ畳み込む（双方向置換はしない）
