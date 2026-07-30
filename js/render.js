@@ -125,7 +125,7 @@ function filteredRecords() {
 
   return state.records.filter((record) => {
     if (state.activeFilters.cart && !record.cartDiffers) return false;
-    if (state.activeFilters.proc && record.procReq !== 'required') return false;
+    if (state.activeFilters.proc && record.procReq === 'notRequired') return false;
     if (state.activeFilters.area && record.area !== state.activeFilters.area) return false;
     if (query && !searchText(record).includes(query)) return false;
     return true;
