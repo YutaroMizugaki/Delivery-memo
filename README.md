@@ -16,7 +16,15 @@
 - **PWA対応**（オフライン閲覧・ホーム画面追加）
 - **トースト通知**（保存・削除・バックアップ等）
 
-## 使い方
+## 公開 URL（GitHub Pages）
+
+https://YutaroMizugaki.github.io/Delivery-memo/
+
+`main` ブランチへマージすると、GitHub Actions で自動デプロイされます。
+
+初回はリポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に設定してください。
+
+## ローカルで動かす
 
 ```bash
 python3 -m http.server 8080
@@ -30,6 +38,8 @@ python3 -m http.server 8080
 .
 ├── index.html           # メイン画面
 ├── delivery-memo.html   # index.html へのリダイレクト
+├── .github/workflows/   # GitHub Pages デプロイ
+├── .nojekyll            # Jekyll 無効化（GitHub Pages用）
 ├── manifest.webmanifest # PWAマニフェスト（相対パス）
 ├── sw.js                # Service Worker（network-first + バージョン管理）
 ├── icons/               # アプリアイコン（SVG + PNG 192/512）
