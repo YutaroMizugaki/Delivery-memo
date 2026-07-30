@@ -3,6 +3,7 @@ export const SHARED_KEY = 'delivery-memo-shared';
 export const SIMILAR_THRESHOLD = 0.55;
 export const SEARCH_DEBOUNCE_MS = 150;
 export const STALE_DAYS = 90;
+export const APP_VERSION = 2;
 
 export const AREAS = ['豊洲', '晴海', '勝どき', '青山', '麻布台', '麻布', '日本橋', '虎ノ門', '六本木', 'その他'];
 export const TIMES = ['—', '約3分', '約5分', '約5〜20分', '約10分', '約10〜15分', '約10〜20分', '約15分', '約15〜20分', '約20分', '約30分'];

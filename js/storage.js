@@ -105,16 +105,17 @@ export async function loadOrSeed() {
 }
 
 export async function refresh(redraw) {
-  if (state.formDirty || $('overlay').classList.contains('show')) return;
+  if (state.formDirty || $('overlay').classList.contains('show')) return false;
 
   const saved = await loadData();
-  if (!saved) return;
+  if (!saved) return false;
 
   const sanitized = sanitizeRecords(saved);
-  if (JSON.stringify(sanitized) === JSON.stringify(state.records)) return;
+  if (JSON.stringify(sanitized) === JSON.stringify(state.records)) return false;
 
   setRecords(sanitized);
   redraw();
+  return true;
 }
 
 export async function resetToSeed(redraw) {

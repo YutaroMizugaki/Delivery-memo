@@ -1,4 +1,6 @@
-const CACHE_NAME = 'delivery-memo-v1';
+// APP_VERSION (config.js) と同期: 更新時は両方を上げる
+const CACHE_VERSION = 2;
+const CACHE_NAME = `delivery-memo-v${CACHE_VERSION}`;
 const BASE = new URL('.', self.location.href);
 
 const ASSET_PATHS = [
@@ -17,14 +19,18 @@ const ASSET_PATHS = [
   'js/utils.js',
   'manifest.webmanifest',
   'icons/icon.svg',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
 ];
 
-const ASSETS = ASSET_PATHS.map((path) => new URL(path, BASE).href);
+const PRECACHE = ASSET_PATHS.map((path) => new URL(path, BASE).href);
+
+const NETWORK_FIRST = /\.(html|js|css|webmanifest)$/i;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS))
+      .then((cache) => cache.addAll(PRECACHE))
       .then(() => self.skipWaiting())
   );
 });
@@ -42,19 +48,38 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
 
-      return cached || network;
-    })
-  );
+  if (NETWORK_FIRST.test(url.pathname)) {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
+
+  event.respondWith(cacheFirst(event.request));
 });
+
+function networkFirst(request) {
+  return fetch(request)
+    .then((response) => {
+      if (response.ok) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+      }
+      return response;
+    })
+    .catch(() => caches.match(request));
+}
+
+function cacheFirst(request) {
+  return caches.match(request).then((cached) => {
+    if (cached) return cached;
+    return fetch(request).then((response) => {
+      if (response.ok) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+      }
+      return response;
+    });
+  });
+}
