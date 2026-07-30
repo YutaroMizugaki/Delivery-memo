@@ -300,6 +300,11 @@ mark { background: var(--accent-dim); color: var(--accent); border-radius: 2px; 
   color: var(--red);
 }
 
+.toast--info {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
 @media (min-width: 520px) {
   .toast { bottom: 32px; }
 }

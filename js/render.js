@@ -15,6 +15,12 @@ function getTags(record) {
   return tags;
 }
 
+function tagsHtml(record) {
+  return getTags(record)
+    .map((tag) => `<span class="tag ${tag.cls}"><span class="dot"></span>${tag.text}</span>`)
+    .join('');
+}
+
 function renderSection(title, content) {
   return `<section class="section"><h3 class="section-title">${title}</h3><p>${content}</p></section>`;
 }
@@ -52,9 +58,7 @@ function buildCardBody(record) {
   const staleBadge = updated.stale
     ? '<span class="updated-badge updated-badge--stale">要確認</span>'
     : '';
-  sections.push(`
-    <p class="updated-at">${staleBadge}<span>${escapeHtml(updated.label)}</span></p>
-  `);
+  sections.push(`<p class="updated-at">${staleBadge}<span>${escapeHtml(updated.label)}</span></p>`);
 
   sections.push(`
     <div class="card-actions">
@@ -66,28 +70,65 @@ function buildCardBody(record) {
   return sections.join('');
 }
 
-function cardHtml(record, open, query) {
-  const tags = getTags(record)
-    .map((tag) => `<span class="tag ${tag.cls}"><span class="dot"></span>${tag.text}</span>`)
-    .join('');
-  const hasTime = record.time && record.time !== '—';
+function recordSignature(record) {
+  return JSON.stringify(record);
+}
 
+function buildCardShell(record, open, query) {
+  const hasTime = record.time && record.time !== '—';
   return `
-    <article class="card ${open ? 'open' : ''}" data-id="${record.id}">
-      <div class="card-head">
-        <div class="card-info">
-          <h2 class="card-name">${highlight(record.name, query)}</h2>
-          <span class="card-area">${escapeHtml(record.area)}</span>
-          <div class="tags">${tags}</div>
-        </div>
-        <div class="time-box">
-          <div class="label">TIME</div>
-          <div class="value ${hasTime ? '' : 'empty'}">${hasTime ? escapeHtml(record.time) : '—'}</div>
-        </div>
+    <div class="card-head">
+      <div class="card-info">
+        <h2 class="card-name">${highlight(record.name, query)}</h2>
+        <span class="card-area">${escapeHtml(record.area)}</span>
+        <div class="tags">${tagsHtml(record)}</div>
       </div>
-      <div class="card-body">${buildCardBody(record)}</div>
-    </article>
+      <div class="time-box">
+        <div class="label">TIME</div>
+        <div class="value ${hasTime ? '' : 'empty'}">${hasTime ? escapeHtml(record.time) : '—'}</div>
+      </div>
+    </div>
+    <div class="card-body">${buildCardBody(record)}</div>
   `;
+}
+
+function syncCardHead(card, record, query) {
+  const nameEl = card.querySelector('.card-name');
+  const newNameHtml = highlight(record.name, query);
+  if (nameEl.innerHTML !== newNameHtml) nameEl.innerHTML = newNameHtml;
+
+  const areaEl = card.querySelector('.card-area');
+  if (areaEl.textContent !== record.area) areaEl.textContent = record.area;
+
+  const tagsEl = card.querySelector('.tags');
+  const newTagsHtml = tagsHtml(record);
+  if (tagsEl.innerHTML !== newTagsHtml) tagsEl.innerHTML = newTagsHtml;
+
+  const timeEl = card.querySelector('.time-box .value');
+  const hasTime = record.time && record.time !== '—';
+  const timeText = hasTime ? record.time : '—';
+  if (timeEl.textContent !== timeText) timeEl.textContent = timeText;
+  timeEl.classList.toggle('empty', !hasTime);
+}
+
+function syncCard(card, record, open, query) {
+  card.classList.toggle('open', open);
+  syncCardHead(card, record, query);
+
+  const signature = recordSignature(record);
+  if (card.dataset.sig !== signature) {
+    card.querySelector('.card-body').innerHTML = buildCardBody(record);
+    card.dataset.sig = signature;
+  }
+}
+
+function createCard(record, open, query) {
+  const card = document.createElement('article');
+  card.className = `card ${open ? 'open' : ''}`;
+  card.dataset.id = record.id;
+  card.dataset.sig = recordSignature(record);
+  card.innerHTML = buildCardShell(record, open, query);
+  return card;
 }
 
 function filteredRecords() {
@@ -104,23 +145,49 @@ function filteredRecords() {
 }
 
 export function renderList() {
-  const list = filteredRecords();
-  const autoOpenId = list.length === 1 ? list[0].id : null;
+  const listEl = $('list');
+  const scrollY = window.scrollY;
+  const records = filteredRecords();
+  const autoOpenId = records.length === 1 ? records[0].id : null;
+  const query = $('search').value.trim();
 
-  $('count').textContent = `${list.length} / ${state.records.length} 件`;
+  $('count').textContent = `${records.length} / ${state.records.length} 件`;
 
-  if (!list.length) {
-    $('list').innerHTML = '<p class="empty">該当する物件がありません</p>';
+  if (!records.length) {
+    if (!listEl.querySelector('.empty')) {
+      listEl.replaceChildren();
+      const empty = document.createElement('p');
+      empty.className = 'empty';
+      empty.textContent = '該当する物件がありません';
+      listEl.appendChild(empty);
+    }
+    window.scrollTo(0, scrollY);
     return;
   }
 
-  const query = $('search').value.trim();
-  $('list').innerHTML = list
-    .map((record) => {
-      const open = state.openCards.has(record.id) || record.id === autoOpenId;
-      return cardHtml(record, open, query);
-    })
-    .join('');
+  listEl.querySelector('.empty')?.remove();
+
+  const existing = new Map();
+  listEl.querySelectorAll('.card').forEach((card) => existing.set(card.dataset.id, card));
+
+  const targetIds = new Set(records.map((record) => record.id));
+  existing.forEach((card, id) => {
+    if (!targetIds.has(id)) card.remove();
+  });
+
+  records.forEach((record) => {
+    const open = state.openCards.has(record.id) || record.id === autoOpenId;
+    const card = existing.get(record.id);
+    if (card) syncCard(card, record, open, query);
+    else listEl.appendChild(createCard(record, open, query));
+  });
+
+  records.forEach((record) => {
+    const card = listEl.querySelector(`[data-id="${CSS.escape(record.id)}"]`);
+    if (card) listEl.appendChild(card);
+  });
+
+  window.scrollTo(0, scrollY);
 }
 
 export function renderFilters() {

@@ -10,8 +10,11 @@
 - 物件の追加・編集・削除
 - 重複・類似物件の検出
 - 防災センター対応時間の自動判定
+- **最終更新日時**の表示（90日以上で「要確認」バッジ）
 - JSONバックアップのエクスポート・インポート
 - チーム共有モード（localStorage）
+- **PWA対応**（オフライン閲覧・ホーム画面追加）
+- **トースト通知**（保存・削除・バックアップ等）
 
 ## 使い方
 
@@ -27,18 +30,14 @@ python3 -m http.server 8080
 .
 ├── index.html           # メイン画面
 ├── delivery-memo.html   # index.html へのリダイレクト
+├── manifest.webmanifest # PWAマニフェスト（相対パス）
+├── sw.js                # Service Worker（network-first + バージョン管理）
+├── icons/               # アプリアイコン（SVG + PNG 192/512）
 ├── css/
-│   └── styles.css       # スタイル
-└── js/
-    ├── app.js           # エントリーポイント
-    ├── config.js        # 定数
-    ├── state.js         # アプリ状態
-    ├── seed.js          # 初期データ
-    ├── storage.js       # 永続化・バックアップ
-    ├── search.js        # 検索・正規化・重複検出
-    ├── render.js        # 一覧・フィルタ描画
-    ├── form.js          # フォーム操作
-    └── utils.js         # ユーティリティ
+│   └── styles.css
+├── js/                  # アプリロジック（ES Modules）
+└── scripts/
+    └── gen-icons.mjs    # PNGアイコン生成用
 ```
 
 ## ライセンス

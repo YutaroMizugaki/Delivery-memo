@@ -85,7 +85,22 @@ const handleSearch = debounce(renderList, SEARCH_DEBOUNCE_MS);
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   try {
-    await navigator.serviceWorker.register('sw.js');
+    const registration = await navigator.serviceWorker.register(
+      new URL('sw.js', window.location.href),
+      { scope: new URL('./', window.location.href).pathname }
+    );
+
+    registration.addEventListener('updatefound', () => {
+      const worker = registration.installing;
+      worker?.addEventListener('statechange', () => {
+        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+          showToast('新しいバージョンがあります。ページを再読み込みしてください', {
+            type: 'info',
+            duration: 5000,
+          });
+        }
+      });
+    });
   } catch {
     // オフライン機能は任意
   }
@@ -132,8 +147,8 @@ async function init() {
     event.target.value = '';
   });
   $('btn-refresh').addEventListener('click', async () => {
-    await refresh(redraw);
-    showToast('最新のデータに更新しました');
+    const updated = await refresh(redraw);
+    if (updated) showToast('最新のデータに更新しました', { type: 'success' });
   });
   $('btn-reset').addEventListener('click', async () => {
     const message = $('shared').checked
