@@ -3,7 +3,8 @@ import { highlight, normalize, searchText } from './search.js';
 import { isCardOpen, state, toggleCardOpen } from './state.js';
 import { escapeHtml, formatUpdatedAt, $ } from './utils.js';
 
-const PROC_SECTION_TITLE = '防災センター・受付の手順';
+const CENTER_SECTION_TITLE = '防災センター（場所・行き方）';
+const ROUTE_SECTION_TITLE = '宅前までのルート';
 const NOTES_SECTION_TITLE = 'その他注意点';
 
 function getTags(record) {
@@ -32,7 +33,8 @@ function buildCardBody(record) {
   const sections = [];
 
   if (record.parking) sections.push(renderSection('駐車場所', escapeHtml(record.parking)));
-  if (record.proc) sections.push(renderSection(PROC_SECTION_TITLE, escapeHtml(record.proc)));
+  if (record.proc) sections.push(renderSection(CENTER_SECTION_TITLE, escapeHtml(record.proc)));
+  if (record.route) sections.push(renderSection(ROUTE_SECTION_TITLE, escapeHtml(record.route)));
 
   if (record.cartDiffers) {
     let cartHtml = '<section class="section"><h3 class="section-title">台車の有無で変わる</h3>';

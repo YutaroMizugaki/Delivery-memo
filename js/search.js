@@ -22,6 +22,7 @@ export function searchText(record) {
     record.area,
     record.parking,
     record.proc,
+    record.route,
     record.cartNo,
     record.cartYes,
     record.notes,

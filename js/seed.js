@@ -8,6 +8,7 @@ function createRecord(name, area, time, overrides = {}) {
     cash: false,
     parking: '',
     proc: '',
+    route: '',
     procReq: 'required',
     cartDiffers: false,
     cartNo: '',
@@ -23,7 +24,8 @@ export function seedData() {
     createRecord('豊洲シエルタワー', '豊洲', '約10分', {
       permit: true,
       parking: '地下駐車場B2（許可証必要）',
-      proc: '1F防災センターで許可証提示→エレベーター案内',
+      proc: '1F東エレ付近。B2→1F、上がってすぐ右手の防災センター',
+      route: 'センターで許可証提示→案内されたエレベーターで配送先階',
       notes: 'エレベーター混雑注意',
     }),
     createRecord('ザ・豊洲タワー', '豊洲', '約10〜15分', {
@@ -36,6 +38,8 @@ export function seedData() {
       cartDiffers: true,
       cartNo: '台車不可エリアあり。1F受付で確認',
       cartYes: '台車使用可ルートあり。受付で申告',
+      proc: '1F受付（防災センター）。正面入口から入ってすぐ',
+      route: '受付通過後、案内に従って各棟・各階へ',
       notes: '21時以降は防災センター閉鎖のため宅配ボックス利用',
     }),
     createRecord('パークタワー勝どきサウス', '勝どき', '約20分', {
@@ -82,7 +86,8 @@ export function seedData() {
     }),
     createRecord('虎ノ門ヒルズ レジデンシャルタワー', '虎ノ門', '約20分', {
       parking: '地下駐車場',
-      proc: 'オフィスタワー側受付経由',
+      proc: '1F防災センター。駐車場→エレベーターで1F',
+      route: 'オフィスタワー側受付経由→レジデンシャル棟エレベーター',
       notes: 'ルート複雑注意',
     }),
     createRecord('六本木ヒルズ森タワー', '六本木', '約15分', {
