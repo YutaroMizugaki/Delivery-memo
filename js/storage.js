@@ -76,7 +76,7 @@ export function sanitizeRecords(records) {
   return records.map((raw, index) => {
     const record = {};
     RECORD_FIELDS.forEach((key) => {
-      if (['permit', 'cash', 'hoursDiffers', 'cartDiffers'].includes(key)) {
+      if (['permit', 'cash', 'cartDiffers'].includes(key)) {
         record[key] = !!raw[key];
       } else if (key === 'procReq') {
         record[key] = ['required', 'notRequired', 'conditional'].includes(raw[key]) ? raw[key] : 'required';
@@ -86,6 +86,12 @@ export function sanitizeRecords(records) {
         record[key] = String(raw[key] ?? '');
       }
     });
+
+    const legacyNotes = [];
+    if (raw.procOut?.trim()) legacyNotes.push(raw.procOut.trim());
+    if (legacyNotes.length) {
+      record.notes = [legacyNotes.join('\n'), record.notes].filter(Boolean).join('\n');
+    }
 
     if (!record.name) record.name = '名称未設定';
     if (!record.id || seen.has(record.id)) record.id = `imp-${Date.now()}-${index}`;
@@ -97,7 +103,11 @@ export function sanitizeRecords(records) {
 export async function loadOrSeed() {
   const saved = await loadData();
   if (saved && Array.isArray(saved) && saved.length) {
-    setRecords(sanitizeRecords(saved));
+    const sanitized = sanitizeRecords(saved);
+    setRecords(sanitized);
+    if (JSON.stringify(sanitized) !== JSON.stringify(saved)) {
+      await storage.set(storageKey(), sanitized);
+    }
     return state.records;
   }
   setRecords(seedData());

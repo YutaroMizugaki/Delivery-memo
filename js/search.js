@@ -22,31 +22,10 @@ export function searchText(record) {
     record.area,
     record.parking,
     record.proc,
-    record.procOut,
     record.cartNo,
     record.cartYes,
     record.notes,
   ].join(' '));
-}
-
-export function hoursState(record) {
-  if (!record.hours) {
-    return { inHours: true, alwaysOpen: false, label: '' };
-  }
-  if (record.hours === '24時間') {
-    return { inHours: true, alwaysOpen: true, label: record.hours };
-  }
-
-  const match = record.hours.match(/(\d{1,2}):(\d{2})[〜\-~](\d{1,2}):(\d{2})/);
-  if (!match) return { inHours: true, alwaysOpen: false, label: record.hours };
-
-  const now = new Date();
-  const current = now.getHours() * 60 + now.getMinutes();
-  const start = Number(match[1]) * 60 + Number(match[2]);
-  const end = Number(match[3]) * 60 + Number(match[4]);
-  const inHours = end < start ? current >= start || current <= end : current >= start && current <= end;
-
-  return { inHours, alwaysOpen: false, label: record.hours };
 }
 
 export function highlight(text, query) {

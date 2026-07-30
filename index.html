@@ -83,7 +83,6 @@
           <label class="check-label"><input type="checkbox" id="f-permit"> 駐車許可証</label>
           <label class="check-label"><input type="checkbox" id="f-cash"> 現金が必要</label>
           <label class="check-label"><input type="checkbox" id="f-cartDiffers"> 台車で変わる</label>
-          <label class="check-label"><input type="checkbox" id="f-hoursDiffers"> 時間外で変わる</label>
         </div>
         <div class="field">
           <label for="f-procReq">手続き要否</label>
@@ -101,15 +100,6 @@
           <label for="f-proc">防災センター・受付の手順</label>
           <textarea id="f-proc"></textarea>
         </div>
-        <div class="field">
-          <label for="f-hours">防災センター対応時間</label>
-          <select id="f-hours"></select>
-          <input type="text" class="new-input" id="f-hours-new" placeholder="例：9:00〜21:00">
-        </div>
-        <div class="field cond-field" id="cond-procOut">
-          <label for="f-procOut">時間外の手順</label>
-          <textarea id="f-procOut"></textarea>
-        </div>
         <div class="field cond-field" id="cond-cartNo">
           <label for="f-cartNo">台車なしの場合</label>
           <textarea id="f-cartNo"></textarea>
@@ -120,7 +110,7 @@
         </div>
         <div class="field">
           <label for="f-notes">その他注意点</label>
-          <textarea id="f-notes"></textarea>
+          <textarea id="f-notes" placeholder="例：21時以降は防災閉鎖のため宅配ボックス利用"></textarea>
         </div>
         <button type="submit" class="modal-save">保存</button>
       </form>

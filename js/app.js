@@ -132,7 +132,7 @@ async function init() {
     updateDuplicateWarning(duplicateWarningHandlers());
   });
 
-  ['permit', 'cash', 'cartDiffers', 'hoursDiffers'].forEach((field) => {
+  ['permit', 'cash', 'cartDiffers'].forEach((field) => {
     $(`f-${field}`).addEventListener('change', () => {
       state.formDirty = true;
       syncChecks();

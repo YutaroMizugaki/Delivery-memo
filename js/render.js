@@ -1,5 +1,5 @@
 import { AREAS, FILTER_CHIPS } from './config.js';
-import { highlight, hoursState, normalize, searchText } from './search.js';
+import { highlight, normalize, searchText } from './search.js';
 import { isCardOpen, state, toggleCardOpen } from './state.js';
 import { escapeHtml, formatUpdatedAt, $ } from './utils.js';
 
@@ -28,28 +28,11 @@ function renderSection(title, content) {
   return `<section class="section"><h3 class="section-title">${title}</h3><p>${content}</p></section>`;
 }
 
-function hoursBadgeHtml(hours) {
-  if (hours.alwaysOpen) return '';
-  if (hours.inHours) return '<span class="hours-badge in">時間内</span>';
-  return '<span class="hours-badge out">時間外</span>';
-}
-
 function buildCardBody(record) {
   const sections = [];
-  const hours = hoursState(record);
 
   if (record.parking) sections.push(renderSection('駐車場所', escapeHtml(record.parking)));
   if (record.proc) sections.push(renderSection(PROC_SECTION_TITLE, escapeHtml(record.proc)));
-
-  if (record.hours) {
-    const badge = hoursBadgeHtml(hours);
-    let hoursHtml = `<section class="section"><h3 class="section-title">対応時間${badge ? ` ${badge}` : ''}</h3><p>${escapeHtml(record.hours)}</p>`;
-    if (record.hoursDiffers && record.procOut) {
-      hoursHtml += `<div class="out-box ${hours.inHours ? '' : 'active'}"><div class="label">時間外の手順</div><p>${escapeHtml(record.procOut)}</p></div>`;
-    }
-    hoursHtml += '</section>';
-    sections.push(hoursHtml);
-  }
 
   if (record.cartDiffers) {
     let cartHtml = '<section class="section"><h3 class="section-title">台車の有無で変わる</h3>';
@@ -141,7 +124,6 @@ function filteredRecords() {
   return state.records.filter((record) => {
     if (state.activeFilters.cart && !record.cartDiffers) return false;
     if (state.activeFilters.proc && record.procReq !== 'required') return false;
-    if (state.activeFilters.hours && !record.hoursDiffers) return false;
     if (state.activeFilters.area && record.area !== state.activeFilters.area) return false;
     if (query && !searchText(record).includes(query)) return false;
     return true;

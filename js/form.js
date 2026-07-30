@@ -1,4 +1,4 @@
-import { AREAS, CHECK_FIELDS, HOURS_OPTS, SELECT_FIELDS, TEXT_FIELDS, TIMES } from './config.js';
+import { AREAS, CHECK_FIELDS, SELECT_FIELDS, TEXT_FIELDS, TIMES } from './config.js';
 import { findDuplicate } from './search.js';
 import { state } from './state.js';
 import { escapeHtml, $ } from './utils.js';
@@ -27,7 +27,6 @@ function fillSelect(select, options, value, newInputId) {
 export function populateSelects(record = {}) {
   fillSelect($('f-area'), AREAS, record.area, 'f-area-new');
   fillSelect($('f-time'), TIMES, record.time, 'f-time-new');
-  fillSelect($('f-hours'), HOURS_OPTS, record.hours, 'f-hours-new');
 }
 
 export function toggleNew(field) {
@@ -48,7 +47,6 @@ export function syncChecks() {
     input.closest('.check-label').classList.toggle('on', input.checked);
   });
 
-  $('cond-procOut').classList.toggle('show', $('f-hoursDiffers').checked);
   $('cond-cartNo').classList.toggle('show', $('f-cartDiffers').checked);
   $('cond-cartYes').classList.toggle('show', $('f-cartDiffers').checked);
 }
@@ -79,7 +77,6 @@ export function readForm() {
     name: $('f-name').value.trim(),
     area: pickValue('area'),
     time: pickValue('time'),
-    hours: pickValue('hours'),
     procReq: $('f-procReq').value,
   };
 
