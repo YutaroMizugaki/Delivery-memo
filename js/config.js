@@ -2,7 +2,7 @@ export const STORAGE_KEY = 'delivery-memo-records';
 export const SHARED_KEY = 'delivery-memo-shared';
 export const SIMILAR_THRESHOLD = 0.55;
 export const SEARCH_DEBOUNCE_MS = 150;
-export const APP_VERSION = 3;
+export const APP_VERSION = 4;
 
 export const AREAS = ['豊洲', '晴海', '勝どき', '青山', '麻布台', '麻布', '日本橋', '虎ノ門', '六本木', 'その他'];
 export const TIMES = ['—', '約3分', '約5分', '約5〜20分', '約10分', '約10〜15分', '約10〜20分', '約15分', '約15〜20分', '約20分', '約30分'];
@@ -47,11 +47,11 @@ export const ALIASES = {
 };
 
 export const RECORD_FIELDS = [
-  'id', 'name', 'area', 'time', 'permit', 'cash', 'parking', 'proc',
+  'id', 'name', 'area', 'time', 'permit', 'cash', 'parking', 'proc', 'route',
   'procReq', 'cartDiffers', 'cartNo', 'cartYes', 'notes',
   'updatedAt',
 ];
 
-export const TEXT_FIELDS = ['name', 'area', 'time', 'parking', 'proc', 'cartNo', 'cartYes', 'notes'];
+export const TEXT_FIELDS = ['name', 'area', 'time', 'parking', 'proc', 'route', 'cartNo', 'cartYes', 'notes'];
 export const CHECK_FIELDS = ['permit', 'cash', 'cartDiffers'];
 export const SELECT_FIELDS = ['area', 'time'];
