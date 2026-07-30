@@ -233,6 +233,21 @@ mark { background: var(--accent-dim); color: var(--accent); border-radius: 2px; 
 }
 .check-label input { accent-color: var(--accent); }
 .check-label.on { border-color: var(--accent); background: var(--accent-dim); }
+.route-block {
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+}
+.route-block-title {
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.route-block .field:last-child { margin-bottom: 0; }
 .cond-field { display: none; }
 .cond-field.show { display: block; }
 .new-input { display: none; margin-top: 6px; }

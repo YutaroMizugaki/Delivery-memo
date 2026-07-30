@@ -9,7 +9,7 @@ export const TIMES = ['—', '約3分', '約5分', '約5〜20分', '約10分', '
 
 export const FILTER_CHIPS = [
   { key: 'cart', label: '台車で変わる' },
-  { key: 'proc', label: '手続き必要' },
+  { key: 'proc', label: '要受付' },
 ];
 
 // 検索用に各バリエーションを正規形へ畳み込む（双方向置換はしない）
