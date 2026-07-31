@@ -45,20 +45,32 @@ const storage = {
 };
 
 function storageKey() {
-  return $('shared').checked ? `${STORAGE_KEY}-shared` : STORAGE_KEY;
+  return isSharedMode() ? `${STORAGE_KEY}-shared` : STORAGE_KEY;
 }
 
 async function loadData() {
   return storage.get(storageKey());
 }
 
-export async function persist(records) {
-  await storage.set(storageKey(), records);
+async function persistRecords(records, { warnOnFallback = false } = {}) {
+  const ok = await storage.set(storageKey(), records);
   setRecords(records);
+  if (!ok && warnOnFallback) {
+    showToast('保存領域が使えません。このタブを閉じるとデータが消える可能性があります', {
+      type: 'error',
+      duration: 5000,
+    });
+  }
+  return ok;
+}
+
+export async function persist(records) {
+  await persistRecords(records, { warnOnFallback: true });
 }
 
 export async function upsertRecord(record) {
-  const latest = (await loadData()) || state.records;
+  const saved = await loadData();
+  const latest = saved ? [...saved] : [...state.records];
   const index = latest.findIndex((item) => item.id === record.id);
   if (index >= 0) latest[index] = record;
   else latest.push(record);
@@ -66,12 +78,14 @@ export async function upsertRecord(record) {
 }
 
 export async function removeRecord(id) {
-  const latest = (await loadData()) || state.records;
+  const saved = await loadData();
+  const latest = saved ? [...saved] : [...state.records];
   await persist(latest.filter((item) => item.id !== id));
 }
 
 export function sanitizeRecords(records) {
   const seen = new Set();
+  const stamp = Date.now();
 
   return records.map((raw, index) => {
     const record = {};
@@ -94,7 +108,7 @@ export function sanitizeRecords(records) {
     }
 
     if (!record.name) record.name = '名称未設定';
-    if (!record.id || seen.has(record.id)) record.id = `imp-${Date.now()}-${index}`;
+    if (!record.id || seen.has(record.id)) record.id = `imp-${stamp}-${index}`;
     seen.add(record.id);
     return record;
   });
@@ -102,7 +116,9 @@ export function sanitizeRecords(records) {
 
 export async function loadOrSeed() {
   const saved = await loadData();
-  if (saved && Array.isArray(saved) && saved.length) {
+
+  // 空配列も「保存済み」として扱う（全削除後に初期データへ勝手に戻さない）
+  if (Array.isArray(saved)) {
     const sanitized = sanitizeRecords(saved);
     setRecords(sanitized);
     if (JSON.stringify(sanitized) !== JSON.stringify(saved)) {
@@ -110,7 +126,10 @@ export async function loadOrSeed() {
     }
     return state.records;
   }
-  setRecords(seedData());
+
+  const seeded = seedData();
+  setRecords(seeded);
+  await storage.set(storageKey(), seeded);
   return state.records;
 }
 
@@ -118,7 +137,7 @@ export async function refresh(redraw) {
   if (state.formDirty || $('overlay').classList.contains('show')) return false;
 
   const saved = await loadData();
-  if (!saved) return false;
+  if (!Array.isArray(saved)) return false;
 
   const sanitized = sanitizeRecords(saved);
   if (JSON.stringify(sanitized) === JSON.stringify(state.records)) return false;
@@ -150,9 +169,19 @@ export async function importRecords(file, redraw) {
   }
 
   const imported = sanitizeRecords(data);
-  const merge = confirm('OK＝統合（同名は上書き）\nキャンセル＝全置換');
 
-  if (merge) {
+  // 旧実装は「キャンセル＝全置換」だったため、誤操作で全消去しやすかった
+  let mode = null;
+  if (confirm(`${imported.length}件を読み込みます。\nOK＝既存と統合（同名は上書き）\nキャンセル＝次の選択肢へ`)) {
+    mode = 'merge';
+  } else if (confirm('全データを置き換えますか？\nOK＝全置換\nキャンセル＝中止')) {
+    mode = 'replace';
+  } else {
+    showToast('読み込みをキャンセルしました');
+    return;
+  }
+
+  if (mode === 'merge') {
     const map = new Map(state.records.map((record) => [normalize(record.name), record]));
     imported.forEach((record) => {
       const existing = map.get(normalize(record.name));
@@ -174,17 +203,27 @@ export function exportRecords() {
   const anchor = document.createElement('a');
   const date = new Date();
   const stamp = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
-  anchor.href = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
+  anchor.href = url;
   anchor.download = `配達メモ_backup_${stamp}.json`;
   anchor.click();
-  URL.revokeObjectURL(anchor.href);
+  // 即 revoke すると一部ブラウザでダウンロードが失敗する
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
   showToast('バックアップを保存しました', { type: 'success' });
 }
 
 export function isSharedMode() {
-  return localStorage.getItem(SHARED_KEY) === 'true';
+  try {
+    return localStorage.getItem(SHARED_KEY) === 'true';
+  } catch {
+    return false;
+  }
 }
 
 export function setSharedMode(enabled) {
-  localStorage.setItem(SHARED_KEY, String(enabled));
+  try {
+    localStorage.setItem(SHARED_KEY, String(enabled));
+  } catch {
+    showToast('共有モードの設定を保存できませんでした', { type: 'error' });
+  }
 }

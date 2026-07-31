@@ -2,9 +2,13 @@
   "name": "workspace",
   "version": "1.0.0",
   "description": "イオンネクスト辰巳拠点の配達ドライバー向け、タワーマンション等の難物件の配達手順をスマホ現場で素早く引ける内製ツールです。",
+  "type": "module",
   "main": "sw.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/test-unit.mjs",
+    "test:unit": "node scripts/test-unit.mjs",
+    "test:smoke": "node scripts/test-smoke.mjs",
+    "start": "python3 -m http.server 8080"
   },
   "repository": {
     "type": "git",
