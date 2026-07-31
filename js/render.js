@@ -169,17 +169,15 @@ export function renderList() {
     if (!targetIds.has(id)) card.remove();
   });
 
+  const fragment = document.createDocumentFragment();
   records.forEach((record) => {
     const open = isCardOpen(record.id, autoOpenId);
-    const card = existing.get(record.id);
+    let card = existing.get(record.id);
     if (card) syncCard(card, record, open, query);
-    else listEl.appendChild(createCard(record, open, query));
+    else card = createCard(record, open, query);
+    fragment.appendChild(card);
   });
-
-  records.forEach((record) => {
-    const card = listEl.querySelector(`[data-id="${CSS.escape(record.id)}"]`);
-    if (card) listEl.appendChild(card);
-  });
+  listEl.appendChild(fragment);
 
   window.scrollTo(0, scrollY);
 }

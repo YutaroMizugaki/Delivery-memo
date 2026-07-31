@@ -68,7 +68,6 @@ export function writeForm(record = {}) {
   });
 
   syncChecks();
-  updateDuplicateWarning();
 }
 
 export function readForm() {

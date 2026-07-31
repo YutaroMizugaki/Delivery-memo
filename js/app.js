@@ -29,19 +29,24 @@ function duplicateWarningHandlers() {
   };
 }
 
+function setModalOpen(open) {
+  $('overlay').classList.toggle('show', open);
+  document.body.classList.toggle('modal-open', open);
+}
+
 function openModal(record = null) {
   state.editingId = record?.id || null;
   state.formDirty = false;
   $('modal-title').textContent = record ? '物件を編集' : '物件を追加';
   writeForm(record || { procReq: 'required' });
   updateDuplicateWarning(duplicateWarningHandlers());
-  $('overlay').classList.add('show');
+  setModalOpen(true);
   $('f-name').focus();
 }
 
 function closeModal(force = false) {
   if (!force && state.formDirty && !confirm('未保存の変更があります。閉じますか？')) return;
-  $('overlay').classList.remove('show');
+  setModalOpen(false);
   state.editingId = null;
   state.formDirty = false;
   $('dup-warn').classList.remove('show');
@@ -123,12 +128,16 @@ async function init() {
   $('overlay').addEventListener('click', (event) => {
     if (event.target === $('overlay')) closeModal();
   });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && $('overlay').classList.contains('show')) {
+      closeModal();
+    }
+  });
   $('form').addEventListener('submit', saveForm);
   $('form').addEventListener('input', () => {
     state.formDirty = true;
   });
   $('f-name').addEventListener('input', () => {
-    state.formDirty = true;
     updateDuplicateWarning(duplicateWarningHandlers());
   });
 

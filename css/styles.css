@@ -24,6 +24,7 @@ body {
   min-height: 100dvh;
   padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px));
 }
+body.modal-open { overflow: hidden; }
 .app { max-width: 520px; margin: 0 auto; padding: 16px 16px 0; }
 
 /* Header */
